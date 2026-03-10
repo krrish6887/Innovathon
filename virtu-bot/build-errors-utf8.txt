@@ -1,0 +1,8 @@
+﻿src/App.tsx(1,8): error TS6133: 'React' is declared but its value is never read.
+src/components/3d/PickAndPlaceTask.tsx(1,8): error TS6133: 'React' is declared but its value is never read.
+src/components/3d/PickAndPlaceTask.tsx(25,24): error TS6133: 'wristRotation' is declared but its value is never read.
+src/components/3d/RoboticArm.tsx(1,8): error TS6133: 'React' is declared but its value is never read.
+src/components/3d/VirtualLab.tsx(1,8): error TS6133: 'React' is declared but its value is never read.
+src/components/3d/VirtualLab.tsx(11,14): error TS2741: Property 'store' is missing in type '{ className: string; style: { position: "absolute"; bottom: string; right: string; zIndex: number; }; }' but required in type 'Omit<Omit<{ store: XRStore; mode: XRSessionMode; onError?: ((error: any) => void) | undefined; children?: ReactNode | ((status: "unsupported" | "exited" | "entered") => ReactNode); } & Omit<...> & RefAttributes<...>, "ref">, "mode">'.
+src/components/3d/VirtualLab.tsx(13,18): error TS2741: Property 'store' is missing in type '{ children: Element[]; }' but required in type 'XRProperties'.
+
