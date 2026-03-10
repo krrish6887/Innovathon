@@ -21,53 +21,53 @@ const dropZoneMaterial = new THREE.MeshBasicMaterial({
 
 const PickAndPlaceTask = () => {
     const {
-        activeTask, setTaskProgress, baseRotation, shoulderRotation,
-        elbowRotation, gripperOpen
+        activeTask, setTaskProgress, gripperOpen, effectorPosition, isGrabbed, setGrabbed
     } = useStore();
 
     const objectRef = useRef<THREE.Mesh>(null);
     const targetPos = new THREE.Vector3(-4, 0.5, 4);
     const dropPos = new THREE.Vector3(4, 0.1, -2);
+    const grabOffset = new THREE.Vector3(0, -0.6, 0);
 
-    // A naive simulation logic to calculate "Progress" based on arm proximity to target & drop zone.
     useFrame(() => {
         if (activeTask !== 'pickAndPlace') return;
 
-        // Simulate "Pick" phase
-        let progress = 0;
+        const effectorVec = new THREE.Vector3(...effectorPosition);
 
-        // Simplistic heuristic for demo purposes:
-        // If base is turned towards object (approx -45 deg)
-        if (baseRotation > -60 && baseRotation < -30) progress += 10;
+        if (!isGrabbed) {
+            // Distance from effector to object
+            const currentObjPos = objectRef.current ? objectRef.current.position : targetPos;
+            const dist = effectorVec.distanceTo(currentObjPos);
 
-        // If arm reaches down (shoulder up, elbow down)
-        if (shoulderRotation > 20) progress += 10;
-        if (elbowRotation > 30) progress += 10;
+            // If the effector is close to the object and gripper closes
+            if (dist < 1.5 && gripperOpen < 0.2) {
+                setGrabbed(true);
+                setTaskProgress(50);
+            }
+        }
 
-        // If gripper is closed
-        if (gripperOpen < 0.2) progress += 20;
+        if (isGrabbed) {
+            // Object follows the effector
+            if (objectRef.current) {
+                objectRef.current.position.copy(effectorVec).add(grabOffset);
+            }
 
-        // Simulate "Place" phase
-        // If base turned towards drop zone (approx +115 deg)
-        if (baseRotation > 90 && baseRotation < 130) progress += 30;
+            // Set progress based on how close we are to the drop zone
+            const distToDrop = effectorVec.distanceTo(new THREE.Vector3(dropPos.x, effectorVec.y, dropPos.z));
+            const progress = 50 + Math.max(0, 50 * (1 - (distToDrop / 10)));
+            setTaskProgress(Math.min(99, progress));
 
-        // If gripper opened at drop zone
-        if (baseRotation > 90 && gripperOpen > 0.8) progress += 20;
+            // If we are over the drop zone and open the gripper
+            // Drop zone requires effector to be lowered slightly too. Let's just use 2D distance for ease.
+            if (distToDrop < 2.0 && gripperOpen > 0.8) {
+                setGrabbed(false);
+                setTaskProgress(100);
+            }
+        }
 
-        // In a real app, calculate actual end-effector position using forward kinematics (matrices).
-        // Here we just use joint angles to fake progress for the hackathon UI.
-        setTaskProgress(Math.min(100, progress));
-
-        // Visually move the object if "grabbed"
-        if (progress >= 50 && progress < 80 && objectRef.current) {
-            // Fake attach to effector
-            objectRef.current.position.set(0, 4, 3); // relative position if it was attached
-        } else if (progress >= 80 && objectRef.current) {
-            // Fake drop
-            objectRef.current.position.copy(dropPos).add(new THREE.Vector3(0, 0.4, 0));
-        } else if (progress < 50 && objectRef.current) {
-            // Reset position
-            objectRef.current.position.copy(targetPos);
+        // Let the object fall to the floor if dropped
+        if (!isGrabbed && objectRef.current && objectRef.current.position.y > 0.5) {
+            objectRef.current.position.y = THREE.MathUtils.lerp(objectRef.current.position.y, 0.4, 0.1);
         }
     });
 

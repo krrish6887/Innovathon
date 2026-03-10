@@ -28,7 +28,7 @@ const accentMaterial = new THREE.MeshStandardMaterial({
 const RoboticArm = () => {
     const {
         baseRotation, shoulderRotation, elbowRotation,
-        wristRotation, gripperOpen
+        wristRotation, gripperOpen, setEffectorPosition
     } = useStore();
 
     // Refs for animation
@@ -38,6 +38,8 @@ const RoboticArm = () => {
     const wristRef = useRef<THREE.Group>(null);
     const leftGripperRef = useRef<THREE.Group>(null);
     const rightGripperRef = useRef<THREE.Group>(null);
+    const effectorRef = useRef<THREE.Group>(null);
+    const targetPos = new THREE.Vector3();
 
     useFrame(() => {
         // Smoothly interpolate current rotations to target rotations from store
@@ -71,6 +73,10 @@ const RoboticArm = () => {
             rightGripperRef.current.position.z = THREE.MathUtils.lerp(
                 rightGripperRef.current.position.z, -gripperTarget, 0.1
             );
+        }
+        if (effectorRef.current) {
+            effectorRef.current.getWorldPosition(targetPos);
+            setEffectorPosition([targetPos.x, targetPos.y, targetPos.z]);
         }
     });
 
@@ -110,6 +116,7 @@ const RoboticArm = () => {
 
                             {/* Grippers */}
                             <group position={[0, 1.0, 0]}>
+                                <group ref={effectorRef} position={[0, 1.0, 0]} />
                                 {/* Left Finger */}
                                 <group ref={leftGripperRef} position={[0, 0, 0.5]}>
                                     <Box args={[0.2, 1.5, 0.1]} position={[0, 0.75, 0]} material={jointMaterial} castShadow receiveShadow />
